@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+$:.push(File.expand_path("../../lib", __FILE__))
+
+require 'optparse'
+
+require "server_compare/collect"
+
+CONFIG = {}
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: sc-compare root@hostname [options]\n"
+
+  opts.on("-h", "--help", "Show help") do
+    puts option_parser.help
+    exit
+  end
+
+  opts.on("--pem [PEM_FILE]", "Pem file") do |pem_file|
+    CONFIG[:keys] = pem_file
+  end
+
+  opts.on("--password [PASSWORD]", "SSH Password") do |password|
+    CONFIG[:password] = password
+  end
+
+#  opts.separator <<-EOS
+#Supported commands:
+# testhook [url]          Send testing webhook to specified url
+#Example:
+# veritrans testhook http://localhost:3000/vt_events
+# veritrans testhook -o my-order-1 -c ~/path/to/veritrans.yml http://localhost:3000/vt_events
+#EOS
+
+end
+
+option_parser.parse!
+
+server = ARGV.shift
+
+if server && server.include?("@")
+  ssh_user, ssh_host = server.split("@")
+
+  collector = Collect.new(ssh_host, ssh_user, CONFIG)
+  collector.collect
+  collector.disconnect
+  puts collector.state.summary
+else
+  puts option_parser.help
+end
