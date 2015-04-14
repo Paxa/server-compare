@@ -37,13 +37,48 @@ option_parser.parse!
 
 server = ARGV.shift
 
-if server && server.include?("@")
-  ssh_user, ssh_host = server.split("@")
+class Help < Exception; end
+begin
+  if server
+    if server.include?("@")
+      ssh_user, ssh_host = server.split("@")
 
-  collector = Collect.new(ssh_host, ssh_user, CONFIG)
-  collector.collect
-  collector.disconnect
-  puts collector.state.summary
-else
+      collector = ServerCompare::Collect.new(ssh_host, ssh_user, CONFIG)
+    elsif server.start_with?(":")
+      unless File.exist?("./servers.yml")
+        puts "Can not find file ./servers.yml"
+        puts
+        raise Help
+      end
+
+      config = ServerCompare::ConfigFile.new("./servers.yml")
+      server_name = server.sub(/^:/, '')
+
+      unless config.servers[server_name]
+        puts "Unknown server: #{server_name}, registered: #{config.servers.keys.join(", ")}"
+        puts
+        raise Help
+      end
+
+      collector = ServerCompare::Collect.from_config(config.servers[server_name])
+    else
+      raise Help
+    end
+
+    collector.collect
+    collector.disconnect
+    puts collector.state.summary
+
+    if config
+      storage = ServerCompare::GitStorage.for_server(config.repo_dir, server_name)
+      storage.init_repo(server_name)
+      storage.remove_all_files
+      collector.state.write_files(storage.path)
+      storage.commit_changes
+    end
+  else
+    raise Help
+  end
+rescue Help => err
   puts option_parser.help
 end

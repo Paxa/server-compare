@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+$:.push(File.expand_path("../../lib", __FILE__))
+
+require 'optparse'
+
+require "server_compare/collect"
+
+class Help < Exception; end
+
+begin
+  unless File.exist?("./servers.yml")
+    puts "Can not find file ./servers.yml"
+    puts
+    raise Help
+  end
+
+  config = ServerCompare::ConfigFile.new("./servers.yml")
+
+  config.servers.each do |server_name, server|
+    storage = ServerCompare::GitStorage.for_server(config.repo_dir, server_name)
+    p storage
+    if storage.created?
+      puts "Pushing #{server_name}"
+      storage.push(config.repo_url)
+    else
+      puts "No repo for #{server_name}"
+    end
+  end
+
+rescue Help => err
+  puts option_parser.help
+end

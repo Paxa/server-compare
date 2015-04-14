@@ -1,16 +1,26 @@
 require 'net/ssh'
 require 'colorize'
-require 'server_compare/server_state'
+require 'server_compare'
 
-class Collect
+class ServerCompare::Collect
   attr_reader :state
+
+  def self.from_config(hash)
+    hash = hash.dup
+    if hash["pem"]
+      hash[:keys] = hash.delete("pem")
+    end
+    options = {}
+    hash.each {|k, v| options[k.to_sym] = v }
+    new(hash.delete('host'), hash.delete('user'), hash)
+  end
 
   def initialize(ssh_host, ssh_user, ssh_options = {})
     @ssh_host = ssh_host
     @ssh_user = ssh_user
     @ssh_options = ssh_options
 
-    @state = ServerState.new
+    @state = ServerCompare::ServerState.new
   end
 
   def collect
@@ -19,6 +29,7 @@ class Collect
     @state.distro = ssh_exec("cat /etc/centos-release")
     @state.packages = ssh_exec("rpm -qa").split("\n")
     @state.users_groups = ssh_exec("for user in $(awk -F: '{print $1}' /etc/passwd); do groups $user; done").split("\n")
+    @state.users_info = ssh_exec("cat /etc/passwd")
   end
 
   def ssh_connection
