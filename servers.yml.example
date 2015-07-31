@@ -1,0 +1,8 @@
+repo_dir: ./servers_data
+repo_url: git@bitbucket.org:paxa/server-compare-sandbox.git
+
+servers:
+  web_app_1:
+    pem: ~/.ssh/pems/sandbox.pem
+    user: root
+    host: 192.168.1.6
