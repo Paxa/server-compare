@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+$:.push(File.expand_path("../../lib", __FILE__))
+
+require 'optparse'
+#require 'fileutils'
+require "server_compare/collect"
+
+CONFIG = {config_path: "./servers.yml"}
+
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: sc-push-config [options]\n"
+
+  opts.on("-h", "--help", "Show help") do
+    puts option_parser.help
+    exit
+  end
+
+  opts.on("--config [CONFIG_FILE]", "servers.yml config file") do |config_path|
+    CONFIG[:config_path] = config_path
+  end
+end
+
+option_parser.parse!
+
+unless File.exist?(CONFIG[:config_path])
+  puts "Can not find file #{CONFIG[:config_path]}"
+  puts
+  raise Help
+end
+
+config = ServerCompare::ConfigFile.new(CONFIG[:config_path])
+
+storage = ServerCompare::GitStorage.for_config(config.repo_dir, config.repo_url)
+storage.init_repo
+storage.check_remote_changes
+storage.remove_all_files
+
+puts "Copying #{config.source_path}..."
+FileUtils.cp(config.source_path, storage.path)
+
+if storage.has_changes?
+  puts "Making commit..."
+  storage.commit_changes
+else
+  puts "Nothinh to commit"
+end
+
+puts "Pushing config file..."
+storage.push

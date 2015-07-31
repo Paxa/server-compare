@@ -18,4 +18,8 @@ class ServerCompare::ConfigFile
   def servers
     @content['servers'] || {}
   end
+
+  def source_path
+    @file
+  end
 end

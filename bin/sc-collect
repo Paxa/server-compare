@@ -70,11 +70,12 @@ begin
     puts collector.state.summary
 
     if config
-      storage = ServerCompare::GitStorage.for_server(config.repo_dir, server_name)
-      storage.init_repo(server_name)
+      storage = ServerCompare::GitStorage.for_server(config.repo_dir, server_name, config.repo_url)
+      storage.init_repo#(server_name)
+      storage.check_remote_changes
       storage.remove_all_files
       collector.state.write_files(storage.path)
-      storage.commit_changes
+      storage.commit_changes(server_name)
     end
   else
     raise Help

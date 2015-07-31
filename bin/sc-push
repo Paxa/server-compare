@@ -19,10 +19,11 @@ begin
 
   config.servers.each do |server_name, server|
     storage = ServerCompare::GitStorage.for_server(config.repo_dir, server_name)
-    p storage
+    storage.remote_url = config.repo_url
+
     if storage.created?
       puts "Pushing #{server_name}"
-      storage.push(config.repo_url)
+      storage.push
     else
       puts "No repo for #{server_name}"
     end

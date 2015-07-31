@@ -4,14 +4,22 @@ require 'shellwords'
 class ServerCompare::GitStorage
   attr_reader :path
   attr_reader :branch
+  attr_accessor :remote_url
 
-  def self.for_server(path, server)
-    new(File.join(path, server), server)
+  CONFIG_BRANCH = "config"
+
+  def self.for_server(path, server, remote_url = nil)
+    new(File.join(path, server), server, remote_url)
   end
 
-  def initialize(path, branch)
+  def self.for_config(path, remote_url)
+    new(File.join(path, CONFIG_BRANCH), CONFIG_BRANCH, remote_url)
+  end
+
+  def initialize(path, branch, remote_url = nil)
     @path = path
     @branch = branch
+    @remote_url = remote_url
   end
 
   def init_repo
@@ -21,7 +29,14 @@ class ServerCompare::GitStorage
         `git init .`
       end
     end
-    set_branch(@branch)
+    set_branch#(@branch)
+  end
+
+  def check_remote_changes
+    set_remote
+    Dir.chdir(@path) do
+      `git pull origin #{branch}`
+    end
   end
 
   def created?
@@ -44,30 +59,38 @@ class ServerCompare::GitStorage
     end
   end
 
-  def commit_changes
+  def has_changes?
+    status = nil
+    Dir.chdir(@path) do
+      status = `git status`
+    end
+    return status !~ /nothing to commit/
+  end
+
+  def commit_changes(server_name = @branch)
     Dir.chdir(@path) do
       status = `git status`
       if status =~ /nothing to commit/
         puts "No changes"
       else
-        `git add .`
-        `git commit -m 'state #{Time.now}'`
+        `git add . -u`
+        `git commit -m '#{server_name} @ #{Time.now}'`
       end
     end
   end
 
-  def push(remote_url)
-    set_remote(remote_url)
+  def push
+    set_remote
     Dir.chdir(@path) do
       `git push origin '#{Shellwords.escape(@branch)}'`
     end
   end
 
-  def set_remote(remote_url)
+  def set_remote
     Dir.chdir(@path) do
       remotes = `git remote -v`
-      unless remotes.include?(remote_url)
-        `git remote add origin '#{Shellwords.escape(remote_url)}'`
+      unless remotes.include?(@remote_url)
+        `git remote add origin '#{Shellwords.escape(@remote_url)}'`
       end
     end
   end
