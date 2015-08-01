@@ -7,12 +7,15 @@ Copy `servers.yml` from https://bitbucket.org/paxa/server-compare-tracks to `./`
 ./bin/sc-collect :vtweb_sandbox
 ./bin/sc-collect ...
 
+# or all servers in config
+./bin/sc-collect :all
+
 ./bin/sc-push
 ./bin/sc-push-config
 ```
 
 TODO:
 
-* save host IP address
-* save host hardware info: ram, swap, CPUs, storage, mac address
-
+* users' crontab
+* users' .profile & .bashrc
+* iptables -S

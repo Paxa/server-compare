@@ -3,14 +3,28 @@ require "yaml"
 
 class ServerCompare::ServerState
   attr_accessor :host_name
+  attr_accessor :host_ip
   attr_accessor :distro
   attr_accessor :kernel
   attr_accessor :packages
+
   attr_accessor :users_groups
   attr_accessor :users_info
 
+  # HARDWARE
+  attr_accessor :cpuinfo
+  attr_accessor :diskinfo
+  attr_accessor :meminfo
+  attr_accessor :lscpu
+
+  # SYSCONF
+  attr_accessor :ifconfig
+  attr_accessor :iptables
+  attr_accessor :mounts
+  attr_accessor :swapinfo
+
   def summary
-    puts "Host:     #{@host_name}"
+    puts "Host:     #{@host_name.strip} (#{@host_ip})"
     puts "System:   #{@distro}"
     puts "          #{@kernel}"
     puts "Packages: #{@packages && @packages.size}"
@@ -22,21 +36,38 @@ class ServerCompare::ServerState
     #FileUtils.rm_r(Dir.glob("#{path}/*")) # if file already exists
 
     Dir.chdir(path) do
-      File.open("host.txt", 'w:utf-8') {|f|   f.write(@host_name) }
-      File.open("distro.txt", 'w:utf-8') {|f| f.write(@distro) }
-      File.open("kernel.txt", 'w:utf-8') {|f| f.write(@kernel) }
+      write_file("hostname.txt", @host_name)
+      write_file("host_ip.txt", @host_ip)
+      write_file("distro.txt", @distro)
+      write_file("kernel.txt", @kernel)
 
-      FileUtils.mkdir_p("packages")
+
+      write_file("hardware/cpuinfo.txt", @cpuinfo)
+      write_file("hardware/lscpu.txt", @lscpu)
+      write_file("hardware/meminfo.txt", @meminfo)
+      write_file("hardware/diskinfo.txt", @diskinfo)
+
+      write_file("sysconf/ifconfig.txt", @ifconfig)
+      write_file("sysconf/iptables.txt", @iptables)
+      write_file("sysconf/mounts.txt", @mounts)
+
+      # Remove 'Used' from `swapon` output
+      swapinfo_wo_used = ""
+      @swapinfo.lines.each do |line|
+        parts = line.split("\t")
+        parts.delete_at(3)
+        swapinfo_wo_used << parts.join("\t") + "\n"
+      end
+
+      write_file("sysconf/swapinfo.txt", swapinfo_wo_used)
 
       @packages.each do |package|
         match = package.match(/^(.+?)\-(\d.+)$/)
         package_name = match[1]
         package_version = match[2]
 
-        File.open("packages/#{package_name}.txt", 'w:utf-8') {|f| f.write(package_version) }
+        write_file("packages/#{package_name}.txt", package_version)
       end
-
-      FileUtils.mkdir_p("users")
 
       @users_groups.each do |line|
         match = line.match(/^(.+)\s:\s(.*)$/)
@@ -56,8 +87,16 @@ class ServerCompare::ServerState
           'shell_name' => shell_name.strip
         }
 
-        File.open("users/#{user}.yml", 'w:utf-8') {|f| f.write(YAML.dump(user_hash)) }
+        write_file("users/#{user}.yml", YAML.dump(user_hash))
       end
     end
+  end
+
+  def write_file(path, content)
+    dir = File.dirname(path)
+    if dir != "."
+      FileUtils.mkdir_p(dir)
+    end
+    File.open(path, 'w:utf-8') {|f| f.write(content) }
   end
 end

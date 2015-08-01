@@ -73,8 +73,9 @@ class ServerCompare::GitStorage
       if status =~ /nothing to commit/
         puts "No changes"
       else
-        `git add . -u`
-        `git commit -m '#{server_name} @ #{Time.now}'`
+        puts "Commit: '#{server_name} @ #{Time.now}'"
+        puts `git add . -A`
+        puts `git commit -m '#{server_name} @ #{Time.now}'`
       end
     end
   end

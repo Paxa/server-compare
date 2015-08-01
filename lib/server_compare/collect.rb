@@ -1,6 +1,7 @@
 require 'net/ssh'
 require 'colorize'
 require 'server_compare'
+require 'resolv'
 
 class ServerCompare::Collect
   attr_reader :state
@@ -25,11 +26,23 @@ class ServerCompare::Collect
 
   def collect
     @state.host_name = ssh_exec("hostname")
+    @state.host_ip = Resolv.getaddress(@ssh_host)
     @state.kernel = ssh_exec("uname -r")
     @state.distro = ssh_exec("cat /etc/centos-release")
     @state.packages = ssh_exec("rpm -qa").split("\n")
-    @state.users_groups = ssh_exec("for user in $(awk -F: '{print $1}' /etc/passwd); do groups $user; done").split("\n")
+    @state.users_groups =
+      ssh_exec("for user in $(awk -F: '{print $1}' /etc/passwd); do groups $user; done").split("\n")
     @state.users_info = ssh_exec("cat /etc/passwd")
+
+    @state.ifconfig = ssh_exec("ifconfig")
+    @state.cpuinfo = ssh_exec("cat /proc/cpuinfo")
+    @state.lscpu = ssh_exec("lscpu")
+    @state.swapinfo = ssh_exec("swapon -a -s")
+    @state.diskinfo = ssh_exec("lsblk")
+    @state.meminfo = ssh_exec("cat /proc/meminfo | grep 'MemTotal\\|SwapTotal'")
+
+    @state.mounts = ssh_exec("mount -l")
+    @state.iptables = ssh_exec("iptables -S")
   end
 
   def ssh_connection
