@@ -34,7 +34,7 @@ class ServerCompare::Collect
       ssh_exec("for user in $(awk -F: '{print $1}' /etc/passwd); do groups $user; done").split("\n")
     @state.users_info = ssh_exec("cat /etc/passwd")
 
-    @state.ifconfig = ssh_exec("ifconfig")
+    @state.ifconfig = ssh_exec("ifconfig | grep 'Link encap:\\|inet addr\\|inet6 addr'")
     @state.cpuinfo = ssh_exec("cat /proc/cpuinfo")
     @state.lscpu = ssh_exec("lscpu")
     @state.swapinfo = ssh_exec("swapon -a -s")
@@ -43,6 +43,10 @@ class ServerCompare::Collect
 
     @state.mounts = ssh_exec("mount -l")
     @state.iptables = ssh_exec("iptables -S")
+
+    crontabs_cmd = %{for user in $(cut -f1 -d: /etc/passwd); do } +
+                     %{echo "~$user"; crontab -u $user -l 2>&1 | awk '$0="    "$0' ; done}
+    @state.users_crontab = ssh_exec(crontabs_cmd)
   end
 
   def ssh_connection

@@ -16,6 +16,4 @@ Copy `servers.yml` from https://bitbucket.org/paxa/server-compare-tracks to `./`
 
 TODO:
 
-* users' crontab
 * users' .profile & .bashrc
-* iptables -S

@@ -10,6 +10,7 @@ class ServerCompare::ServerState
 
   attr_accessor :users_groups
   attr_accessor :users_info
+  attr_accessor :users_crontab
 
   # HARDWARE
   attr_accessor :cpuinfo
@@ -69,6 +70,9 @@ class ServerCompare::ServerState
         write_file("packages/#{package_name}.txt", package_version)
       end
 
+      crontabs = parse_crontabs
+      puts crontabs['railsapp']
+
       @users_groups.each do |line|
         match = line.match(/^(.+)\s:\s(.*)$/)
         user = match[1]
@@ -87,9 +91,31 @@ class ServerCompare::ServerState
           'shell_name' => shell_name.strip
         }
 
+        if crontabs[user]
+          user_hash['crontab'] = crontabs[user]
+        end
+
         write_file("users/#{user}.yml", YAML.dump(user_hash))
       end
     end
+  end
+
+  def parse_crontabs
+    sections = ("\n" + @users_crontab).split(/\n^~/)
+    per_user = {}
+    sections.each do |section|
+      next if section == ""
+
+      lines = section.lines
+      user = lines.shift.strip
+      if lines.size == 1 && lines[0] =~ /^\s+no crontab for/
+        next
+      else
+        per_user[user] = lines.map {|l| l.sub(/^\s{4}/, '').rstrip }.join("\n")
+      end
+    end
+
+    return per_user
   end
 
   def write_file(path, content)
