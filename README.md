@@ -17,3 +17,4 @@ Copy `servers.yml` from https://bitbucket.org/paxa/server-compare-tracks to `./`
 TODO:
 
 * users' .profile & .bashrc
+* open network ports (eg 21, 22, 80 etc.)
