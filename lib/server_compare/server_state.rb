@@ -24,6 +24,15 @@ class ServerCompare::ServerState
   attr_accessor :mounts
   attr_accessor :swapinfo
 
+  # FILES
+  attr_accessor :preserve_files
+  attr_accessor :preserve_files_meta
+
+  def initialize
+    @preserve_files = []
+    @preserve_files_meta = []
+  end
+
   def summary
     puts "Host:     #{@host_name.strip} (#{@host_ip})"
     puts "System:   #{@distro}"
@@ -96,6 +105,16 @@ class ServerCompare::ServerState
         end
 
         write_file("users/#{user}.yml", YAML.dump(user_hash))
+      end
+
+      preserve_files_meta.each do |line|
+        file_data = line.split("|").map(&:strip)
+        stat = Hash[[:name, :access, :owner, :type, :mtime].zip(file_data)]
+        write_file("files_meta/#{stat[:name]}", line)
+      end
+
+      preserve_files.each do |file, content|
+        write_file("files/#{file}", content)
       end
     end
   end

@@ -1,4 +1,5 @@
 require 'net/ssh'
+require 'net/scp'
 require 'colorize'
 require 'server_compare'
 require 'resolv'
@@ -19,7 +20,7 @@ class ServerCompare::Collect
   def initialize(ssh_host, ssh_user, ssh_options = {})
     @ssh_host = ssh_host
     @ssh_user = ssh_user
-    @ssh_options = ssh_options
+    @host_options = ssh_options
 
     @state = ServerCompare::ServerState.new
   end
@@ -47,10 +48,44 @@ class ServerCompare::Collect
     crontabs_cmd = %{for user in $(cut -f1 -d: /etc/passwd); do } +
                      %{echo "~$user"; crontab -u $user -l 2>&1 | awk '$0="    "$0' ; done}
     @state.users_crontab = ssh_exec(crontabs_cmd)
+
+    if @host_options['preserve_files']
+      safe_files = @host_options['preserve_files'].map do |file|
+        Shellwords.escape(file)
+      end
+      stat_files_cmd = %{stat -c "%n | %a | %U:%G | %F | %y" #{@host_options['preserve_files'].join(" ")}}
+      @state.preserve_files_meta = ssh_exec(stat_files_cmd).split("\n")
+
+      @state.preserve_files_meta.each do |line|
+        file_data = line.split("|").map(&:strip)
+        file_stat = Hash[[:name, :access, :owner, :type, :mtime].zip(file_data)]
+
+        if file_stat[:type] == "directory"
+          next
+        end
+        @state.preserve_files << [file_stat[:name], scp_file(file_stat[:name])]
+      end
+    end
   end
 
   def ssh_connection
-    @ssh_connection ||= Net::SSH.start(@ssh_host, @ssh_user, @ssh_options)
+    @ssh_connection ||= Net::SSH.start(@ssh_host, @ssh_user, ssh_options)
+  end
+
+  def scp_file(remote_file)
+    puts_pending("SCP: #{remote_file}")
+    data = Net::SCP::download!(@ssh_host, @ssh_user, remote_file, nil, ssh: ssh_options)
+    puts_complete("SCP: #{remote_file}")
+    data
+  rescue => error
+    puts_failed("SCP: #{remote_file}")
+    puts error.message.red
+  end
+
+  def ssh_options
+    options = {}
+    options[:keys] = @host_options[:keys] || @host_options['keys']
+    options
   end
 
   def ssh_exec(command)
