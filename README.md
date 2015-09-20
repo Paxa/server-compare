@@ -49,3 +49,4 @@ servers:
 TODO:
 
 * users' .profile & .bashrc
+* open network ports (eg 21, 22, 80 etc.)
