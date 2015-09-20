@@ -45,6 +45,8 @@ class ServerCompare::Collect
     @state.mounts = ssh_exec("mount -l")
     @state.iptables = ssh_exec("iptables -S")
 
+    @state.auto_load_services = ssh_exec("chkconfig --list")
+
     crontabs_cmd = %{for user in $(cut -f1 -d: /etc/passwd); do } +
                      %{echo "~$user"; crontab -u $user -l 2>&1 | awk '$0="    "$0' ; done}
     @state.users_crontab = ssh_exec(crontabs_cmd)

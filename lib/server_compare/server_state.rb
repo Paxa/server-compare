@@ -7,6 +7,7 @@ class ServerCompare::ServerState
   attr_accessor :distro
   attr_accessor :kernel
   attr_accessor :packages
+  attr_accessor :auto_load_services
 
   attr_accessor :users_groups
   attr_accessor :users_info
@@ -50,6 +51,7 @@ class ServerCompare::ServerState
       write_file("host_ip.txt", @host_ip)
       write_file("distro.txt", @distro)
       write_file("kernel.txt", @kernel)
+      write_file("auto_load_services.txt", @auto_load_services)
 
 
       write_file("hardware/cpuinfo.txt", @cpuinfo)
