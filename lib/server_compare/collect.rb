@@ -71,6 +71,7 @@ class ServerCompare::Collect
   end
 
   def ssh_connection
+    ENV['LC_CTYPE'] = "en_US.UTF-8"
     @ssh_connection ||= Net::SSH.start(@ssh_host, @ssh_user, ssh_options)
   end
 
@@ -86,6 +87,7 @@ class ServerCompare::Collect
 
   def ssh_options
     options = {}
+    #command[:send_env] = "LC_CTYPE"
     options[:keys] = @host_options[:keys] || @host_options['keys']
     options
   end
