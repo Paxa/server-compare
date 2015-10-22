@@ -51,6 +51,25 @@ class ServerCompare::Collect
                      %{echo "~$user"; crontab -u $user -l 2>&1 | awk '$0="    "$0' ; done}
     @state.users_crontab = ssh_exec(crontabs_cmd)
 
+    changed_configs_cmd = 'rpm -Vva --nodeps --noscripts 2>&1 | grep -v "^\.\{8\}" | grep "[[:blank:]]/etc/"'
+    @state.changed_files = ssh_exec(changed_configs_cmd)
+
+    # S.5....T.  c /etc/ssh/sshd_config
+    # S.5....T.  c /etc/securetty
+    # S.5....T.  c /etc/sudoers
+    # S.5....T.  c /etc/yum.conf
+    # S.5....T.  c /etc/rc.d/rc.local
+    # S.5....T.  c /etc/sysconfig/init
+    changed_files = @state.changed_files.split(/^.+\s{2}c\s(.*)/)
+    changed_files.each do |file|
+      next if file =~ /^\s*$/
+      @host_options['preserve_files'] ||= []
+      unless @host_options['preserve_files'].include?(file)
+        @host_options['preserve_files'] << file
+      end
+    end
+
+
     if @host_options['preserve_files']
       safe_files = @host_options['preserve_files'].map do |file|
         Shellwords.escape(file)
@@ -92,18 +111,29 @@ class ServerCompare::Collect
     options
   end
 
+  TIME_SIGN = "🕐"
+
   def ssh_exec(command)
     puts_pending("SSH: #{command}")
 
     # ssh_connection.exec(command)
     # puts_complete("SSH: #{command}")
 
+    start_time = Time.now
+
     result = ssh_exec_command(command)
 
-    if result[:success]
-      puts_complete("SSH: #{command}")
+    spent_time = Time.now - start_time
+    if spent_time > 5 # 5 seconds
+      time = " #{TIME_SIGN}  #{spent_time.round(3)}sec"
     else
-      puts_failed("SSH: #{command}")
+      time = ""
+    end
+
+    if result[:success]
+      puts_complete("SSH: #{command}#{time}")
+    else
+      puts_failed("SSH: #{command}#{time}")
     end
 
     if result[:stderr].size > 0

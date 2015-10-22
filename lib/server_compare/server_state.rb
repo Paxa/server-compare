@@ -29,6 +29,8 @@ class ServerCompare::ServerState
   attr_accessor :preserve_files
   attr_accessor :preserve_files_meta
 
+  attr_accessor :changed_files
+
   def initialize
     @preserve_files = []
     @preserve_files_meta = []
@@ -62,6 +64,8 @@ class ServerCompare::ServerState
       write_file("sysconf/ifconfig.txt", @ifconfig)
       write_file("sysconf/iptables.txt", @iptables)
       write_file("sysconf/mounts.txt", @mounts)
+
+      write_file("files/__changes_files.txt", @changed_files)
 
       # Remove 'Used' from `swapon` output
       swapinfo_wo_used = ""
