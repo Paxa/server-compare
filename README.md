@@ -1,18 +1,25 @@
-Tracks repo: https://bitbucket.org/paxa/server-compare-tracks
+# Server Compare
 
-Copy `servers.yml` from https://bitbucket.org/paxa/server-compare-tracks to `./`
+Collect remote servers configuration and store it in a git repository.
+
+*Currently it works only with CentOS, this is still alfa version*
+
+
+After you create `servers.yml`, collect infromation from servers:
 
 ```
-./bin/sc-collect :turbo_sandbox
-./bin/sc-collect :vtweb_sandbox
-./bin/sc-collect ...
+./bin/sc-collect :my_server_a
+./bin/sc-collect :my_server_b
 
 # or all servers in config
 ./bin/sc-collect :all
 
 # or manually
 ./bin/sc-collect root@hostname --password=123123 --pem=./server_key.pem
+```
 
+Then push it to remote server
+```
 ./bin/sc-push
 ./bin/sc-push-config
 ```
@@ -21,7 +28,7 @@ Copy `servers.yml` from https://bitbucket.org/paxa/server-compare-tracks to `./`
 
 ```yml
 repo_dir: ./servers_data
-repo_url: git@bitbucket.org:paxa/server-compare-tracks.git
+repo_url: git@bitbucket.org:yourname/my-servers-tracks.git
 
 servers:
   server_a:
@@ -30,10 +37,6 @@ servers:
     pem: ~/.ssh/pems/server_a.pem
     preserve_files:
       - /opt/nginx/conf/nginx.conf
-      - /etc/inspeqtor/**/*
-      - /etc/init/inspeqtor.conf
-      - /etc/init.d/inspeqtor
-      - /etc/init.d/delayed_job
       - /etc/init.d/nginx
       - /etc/bashrc
   server_b:

@@ -1,5 +1,5 @@
 repo_dir: ./servers_data
-repo_url: git@bitbucket.org:paxa/server-compare-sandbox.git
+repo_url: git@bitbucket.org:user/my-servers-tracks.git
 
 servers:
   web_app_1:
