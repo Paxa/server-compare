@@ -149,5 +149,9 @@ class ServerCompare::ServerState
       FileUtils.mkdir_p(dir)
     end
     File.open(path, 'w:utf-8') {|f| f.write(content) }
+  rescue => error
+    puts "Error writing file #{path}"
+    puts "#{error.class}: #{error.message}"
+    puts error.backtrace
   end
 end

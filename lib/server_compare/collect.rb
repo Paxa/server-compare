@@ -60,9 +60,11 @@ class ServerCompare::Collect
     # S.5....T.  c /etc/yum.conf
     # S.5....T.  c /etc/rc.d/rc.local
     # S.5....T.  c /etc/sysconfig/init
-    changed_files = @state.changed_files.split(/^.+\s{2}c\s(.*)/)
-    changed_files.each do |file|
-      next if file =~ /^\s*$/
+    changed_files_lines = @state.changed_files.split(/\n/)
+    changed_files_lines.each do |file_line|
+      file = file_line.split(/^.+\s{2}c?\s(.*)/).last
+      next if file =~ /^\s*$/ || file_line.start_with?("missing")
+
       @host_options['preserve_files'] ||= []
       unless @host_options['preserve_files'].include?(file)
         @host_options['preserve_files'] << file
