@@ -11,9 +11,13 @@ CONFIG = {}
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: sc-compare root@hostname [options]\n"
 
-  opts.on("-h", "--help", "Show help") do
+  opts.on("--help", "Show help") do
     puts option_parser.help
     exit
+  end
+
+  opts.on("-h", "--host [HOST_NAME]", "Host name") do |hostname|
+    CONFIG[:host] = hostname
   end
 
   opts.on("--pem [PEM_FILE]", "Pem file") do |pem_file|
@@ -89,6 +93,8 @@ begin
       storage.commit_changes(server_name)
     end
 =end
+  elsif CONFIG[:host]
+    ServerCompare::CLI.command_collect(":#{CONFIG[:host]}")
   else
     raise Help
   end

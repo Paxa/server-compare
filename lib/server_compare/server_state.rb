@@ -65,7 +65,7 @@ class ServerCompare::ServerState
       write_file("sysconf/iptables.txt", @iptables)
       write_file("sysconf/mounts.txt", @mounts)
 
-      write_file("files/__changes_files.txt", @changed_files)
+      write_file("files/__changed_files.txt", @changed_files)
 
       # Remove 'Used' from `swapon` output
       swapinfo_wo_used = ""

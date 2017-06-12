@@ -109,7 +109,9 @@ class ServerCompare::Collect
   def ssh_options
     options = {}
     #command[:send_env] = "LC_CTYPE"
-    options[:keys] = @host_options[:keys] || @host_options['keys']
+    if @host_options[:keys] || @host_options['keys']
+      options[:keys] = @host_options[:keys] || @host_options['keys']
+    end
     options
   end
 
